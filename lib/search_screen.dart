@@ -1,4 +1,3 @@
-
 import 'package:btl_flutter/chat.dart';
 import 'package:btl_flutter/chat_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -61,17 +60,15 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
-            stream: searchQuery.isEmpty
-                ? Stream.empty()
-                : chatProvider.searchUsers(searchQuery),
+            stream: searchQuery.isEmpty ? Stream.empty() : chatProvider.searchUsers(searchQuery),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return Center(
                   child: CircularProgressIndicator(),
                 );
               }
-              final user= snapshot.data!.docs;
-           
+              final user = snapshot.data!.docs;
+
               List<UserTile> userWidgets = [];
               for (var user in user) {
                 final userData = user.data() as Map<String, dynamic>;
@@ -122,8 +119,14 @@ class UserTile extends StatelessWidget {
       subtitle: Text(email),
       onTap: () async {
         final chatId = await chatProvider.getChatRoom(uid) ?? await chatProvider.createChatRoom(uid);
-        // Điều hướng tới màn hình chat với chatId
-        Navigator.push(context, MaterialPageRoute(builder: (context) => ChatScreen(chatId: chatId, receiverId: uid ,),));
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChatScreen(
+                chatId: chatId,
+                receiverId: uid,
+              ),
+            ));
       },
     );
   }

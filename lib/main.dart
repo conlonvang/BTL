@@ -46,9 +46,10 @@ class AuthenticationWrapper extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         if (authProvider.isSignedIn) {
+          return TrangChuPage();
+        } else {
           return DangNhapPage();
-        } else{return TrangChuPage();}
-          
+        }
       },
     );
   }

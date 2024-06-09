@@ -1,3 +1,4 @@
+
 import 'package:btl_flutter/chat.dart';
 import 'package:btl_flutter/login.dart';
 import 'package:btl_flutter/search_screen.dart';
@@ -15,7 +16,7 @@ class TrangChuPage extends StatefulWidget {
 }
 
 class _TrangChuPageState extends State<TrangChuPage> {
-  final _auth = FirebaseAuth.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   User? loggedInUser;
 
   @override
@@ -24,8 +25,8 @@ class _TrangChuPageState extends State<TrangChuPage> {
     getCurrentUser();
   }
 
-  void getCurrentUser() {
-    final user = _auth.currentUser;
+  Future<void> getCurrentUser() async {
+    final User? user = _auth.currentUser;
     if (user != null) {
       setState(() {
         loggedInUser = user;
@@ -36,23 +37,35 @@ class _TrangChuPageState extends State<TrangChuPage> {
   Future<Map<String, dynamic>> _fetchChatData(String chatId) async {
     final chatDoc = await FirebaseFirestore.instance.collection('chats').doc(chatId).get();
     final chatData = chatDoc.data();
-    final user = chatData!['user'] as List<dynamic>;
-    final receiverId = user.firstWhere(
-      (id) => id != loggedInUser!.uid,
-    );
-    final userDoc = await FirebaseFirestore.instance.collection('user').doc(receiverId).get();
-    final userData = userDoc.data()!;
-    return {
-      'chatId': chatId,
-      'lastMessage': chatData['lastMessage'] ?? '',
-      'timestamp': chatData['timestamp']?.toDate() ?? DateTime.now(),
-      'userData': userData,
-    };
+    if (chatData != null) {
+      final List<dynamic> user = chatData['user'] as List<dynamic>;
+      final String receiverId = user.firstWhere(
+        (id) => id != loggedInUser!.uid,
+      );
+      final userDoc = await FirebaseFirestore.instance.collection('user').doc(receiverId).get();
+      final userData = userDoc.data()!;
+      return {
+        'chatId': chatId,
+        'lastMessage': chatData['lastMessage'] ?? '',
+        'timestamp': chatData['timestamp']?.toDate() ?? DateTime.now(),
+        'userData': userData,
+      };
+    }
+    return {};
   }
 
   @override
   Widget build(BuildContext context) {
     final chatProvider = Provider.of<ChatProvider>(context);
+
+    if (loggedInUser == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return WillPopScope(
       onWillPop: () async {
         return false;
@@ -60,18 +73,19 @@ class _TrangChuPageState extends State<TrangChuPage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: Text('Trang chủ'),
+          title: const Text('Trang chủ'),
           actions: [
             IconButton(
               onPressed: () {
                 _auth.signOut();
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DangNhapPage(),
-                    ));
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DangNhapPage(),
+                  ),
+                );
               },
-              icon: Icon(Icons.logout),
+              icon: const Icon(Icons.logout),
             )
           ],
         ),
@@ -82,7 +96,7 @@ class _TrangChuPageState extends State<TrangChuPage> {
                 stream: chatProvider.getChats(loggedInUser!.uid),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
-                    return Center(
+                    return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
@@ -93,7 +107,7 @@ class _TrangChuPageState extends State<TrangChuPage> {
                     )),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) {
-                        return Center(
+                        return const Center(
                           child: CircularProgressIndicator(),
                         );
                       }
@@ -102,11 +116,28 @@ class _TrangChuPageState extends State<TrangChuPage> {
                         itemCount: chatDataList.length,
                         itemBuilder: (context, index) {
                           final chatData = chatDataList[index];
-                          return ChatTile(
-                            chatId: chatData['chatId'],
-                            lastMessage: chatData['lastMessage'],
-                            timestamp: chatData['timestamp'],
-                            receverData: chatData['userData'],
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            child: InkWell(
+                              onTap: () {
+                                // Add onTap functionality here
+                              },
+                              child: Card(
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10),
+                                  child: ChatTile(
+                                    chatId: chatData['chatId'],
+                                    lastMessage: chatData['lastMessage'],
+                                    timestamp: chatData['timestamp'],
+                                    receiverData: chatData['userData'],
+                                  ),
+                                ),
+                              ),
+                            ),
                           );
                         },
                       );
@@ -122,12 +153,13 @@ class _TrangChuPageState extends State<TrangChuPage> {
           foregroundColor: Colors.white,
           onPressed: () {
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SearchScreen(),
-                ));
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SearchScreen(),
+              ),
+            );
           },
-          child: Icon(Icons.search),
+          child: const Icon(Icons.search),
         ),
       ),
     );
